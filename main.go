@@ -15,18 +15,20 @@ func main() {
 		log.Printf("starting cycle %+v\n", cycle)
 		func(){
 			log.SetFlags(log.LstdFlags | log.Llongfile)
-			ctx, cancel := chromedp.NewContext(
+			ctx0, cancel2 := chromedp.NewContext(
 				context.Background(),
 				chromedp.WithLogf(log.Printf),
 			)
-			defer cancel()
+			defer cancel2()
+			defer ctx0.Done()
 
 			// create a timeout
-			ctx, cancel = context.WithTimeout(ctx, 15 * time.Second)
+			ctx, cancel := context.WithTimeout(ctx0, 30 * time.Second)
 			defer cancel()
+			defer ctx.Done()
 
-			u := `https://www.whatismybrowser.com/detect/what-is-my-user-agent`
-			selector := `#detected_value`
+			u := `https://github.com/`
+			selector := `title`
 			log.Println("requesting", u)
 			log.Println("selector", selector)
 			var result string
@@ -39,6 +41,11 @@ func main() {
 				log.Printf("error %+v \n", err)
 			}
 			log.Printf("result:\n%s", result)
+			if errCancel := chromedp.Cancel(ctx); errCancel != nil {
+				log.Printf("cancel context error: %+v \n", errCancel)
+			} else {
+				log.Printf("cancel run without an error")
+			}
 		}()
 		sl := time.Second
 		log.Printf("sleeping for %s\n", sl)
