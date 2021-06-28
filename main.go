@@ -22,11 +22,6 @@ func main() {
 			defer cancel2()
 			defer ctx0.Done()
 
-			// create a timeout
-			/*ctx, cancel := context.WithTimeout(ctx0, 30 * time.Second)
-			defer cancel()
-			defer ctx.Done()*/
-
 			u := `https://github.com/`
 			selector := `title`
 			log.Println("requesting", u)
