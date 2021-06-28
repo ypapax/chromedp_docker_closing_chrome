@@ -23,16 +23,16 @@ func main() {
 			defer ctx0.Done()
 
 			// create a timeout
-			ctx, cancel := context.WithTimeout(ctx0, 30 * time.Second)
+			/*ctx, cancel := context.WithTimeout(ctx0, 30 * time.Second)
 			defer cancel()
-			defer ctx.Done()
+			defer ctx.Done()*/
 
 			u := `https://github.com/`
 			selector := `title`
 			log.Println("requesting", u)
 			log.Println("selector", selector)
 			var result string
-			err := chromedp.Run(ctx,
+			err := chromedp.Run(ctx0,
 				chromedp.Navigate(u),
 				chromedp.WaitReady(selector),
 				chromedp.OuterHTML(selector, &result),
@@ -41,7 +41,7 @@ func main() {
 				log.Printf("error %+v \n", err)
 			}
 			log.Printf("result:\n%s", result)
-			if errCancel := chromedp.Cancel(ctx); errCancel != nil {
+			if errCancel := chromedp.Cancel(ctx0); errCancel != nil {
 				log.Printf("cancel context error: %+v \n", errCancel)
 			} else {
 				log.Printf("cancel run without an error")
