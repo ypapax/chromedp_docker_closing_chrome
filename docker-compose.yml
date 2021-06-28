@@ -5,5 +5,3 @@ services:
       context: ./
       dockerfile: Dockerfile
     image: chromedp_docker
-    security_opt:
-      - seccomp:./chrome.json
