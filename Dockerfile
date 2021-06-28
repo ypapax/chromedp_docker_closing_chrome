@@ -1,23 +1,34 @@
+# Compile app binary
 FROM golang:latest as build-env
-RUN mkdir $GOPATH/src/app
-WORKDIR $GOPATH/src/app
-ENV GO111MODULE=on
-COPY go.mod .
-COPY go.sum .
-COPY main.go .
-RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /root/app ./*.go
 
-FROM zenika/alpine-chrome
-#RUN apk update
-#RUN apk upgrade
-#RUN apk add bash
-COPY --from=build-env /root/app /
-COPY entrypoint.sh entrypoint.sh
-RUN ls && pwd
-#RUN chmod +x entrypoint.sh
-#RUN mkdir -p /headless-shell/swiftshader/ \
-#    && cd /headless-shell/swiftshader/ \
-#    && ln -s ../libEGL.so libEGL.so \
-#    && ln -s ../libGLESv2.so libGLESv2.so
-ENTRYPOINT ["/usrc/src/app/entrypoint.sh"]
+ENV GO111MODULE=on
+
+WORKDIR /go/src
+COPY main.go main.go
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -installsuffix cgo -o /app
+
+FROM arunvelsriram/utils
+USER root
+RUN apt upgrade -y
+RUN apt-get install curl gnupg debian-keyring debian-archive-keyring -y
+RUN apt-get install bc -y
+RUN apt-get install sudo -y
+RUN curl -fsSL https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc | apt-key add -
+RUN apt-key adv --keyserver "keyserver.ubuntu.com" --recv-keys "F77F1EDA57EBB1CC"
+RUN apt-get install apt-transport-https
+RUN echo "deb http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu bionic main" > /etc/apt/sources.list.d/bintray.rabbitmq.list
+RUN echo "deb-src http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu bionic main" >> /etc/apt/sources.list.d/bintray.rabbitmq.list
+RUN apt-get update
+
+RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
+
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+RUN dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install
+
+COPY --from=build-env /app /app
+
+
+CMD ["/app"]
