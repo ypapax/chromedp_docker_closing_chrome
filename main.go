@@ -4,8 +4,15 @@ import (
 	"context"
 	"github.com/chromedp/chromedp"
 	"log"
+	"sync"
 	"time"
 )
+
+var (
+	commonContext *context.Context
+	commonContextMtx sync.Mutex
+)
+
 
 func main() {
 	log.Println("app is running")
@@ -14,20 +21,24 @@ func main() {
 		cycle++
 		log.Printf("starting cycle %+v\n", cycle)
 		func(){
+			commonContextMtx.Lock()
+			defer commonContextMtx.Unlock()
 			log.SetFlags(log.LstdFlags | log.Llongfile)
-			ctx0, cancel2 := chromedp.NewContext(
-				context.Background(),
-				chromedp.WithLogf(log.Printf),
-			)
-			defer cancel2()
-			defer ctx0.Done()
+			if commonContext == nil {
+				ctx0, _ := chromedp.NewContext(
+					context.Background(),
+					chromedp.WithLogf(log.Printf),
+				)
+				commonContext = &ctx0
+			}
+
 
 			u := `https://github.com/`
 			selector := `title`
 			log.Println("requesting", u)
 			log.Println("selector", selector)
 			var result string
-			err := chromedp.Run(ctx0,
+			err := chromedp.Run(*commonContext,
 				chromedp.Navigate(u),
 				chromedp.WaitReady(selector),
 				chromedp.OuterHTML(selector, &result),
@@ -36,11 +47,6 @@ func main() {
 				log.Printf("error %+v \n", err)
 			}
 			log.Printf("result:\n%s", result)
-			if errCancel := chromedp.Cancel(ctx0); errCancel != nil {
-				log.Printf("cancel context error: %+v \n", errCancel)
-			} else {
-				log.Printf("cancel run without an error")
-			}
 		}()
 		sl := time.Second
 		log.Printf("sleeping for %s\n", sl)
