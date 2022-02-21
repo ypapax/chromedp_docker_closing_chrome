@@ -20,7 +20,7 @@ buildLinux(){
 rund(){
   docker build  -t chromedp-alpine .
 #  --security-opt seccomp=$(pwd)/chrome.json
-  docker container run -it --rm  chromedp-alpine --name chromedp_docker
+  docker container run -it --rm --name chromedp_docker  chromedp-alpine
 }
 
 "$@"
