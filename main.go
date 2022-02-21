@@ -13,9 +13,44 @@ var (
 	commonContextMtx sync.Mutex
 )
 
-
 func main() {
 	log.Println("app is running")
+	cycle := 0
+	for {
+		cycle++
+		log.Printf("starting cycle %+v\n", cycle)
+		func(){
+			log.SetFlags(log.LstdFlags | log.Llongfile)
+			ctx0, cancel := chromedp.NewContext(
+				context.Background(),
+				chromedp.WithLogf(log.Printf),
+			)
+			defer cancel()
+
+
+			u := `https://github.com/`
+			selector := `title`
+			log.Println("requesting", u)
+			log.Println("selector", selector)
+			var result string
+			err := chromedp.Run(ctx0,
+				chromedp.Navigate(u),
+				chromedp.WaitReady(selector),
+				chromedp.OuterHTML(selector, &result),
+			)
+			if err != nil {
+				log.Printf("error %+v \n", err)
+			}
+			log.Printf("result:\n%s", result)
+		}()
+		sl := time.Second
+		log.Printf("sleeping for %s\n", sl)
+		time.Sleep(sl)
+	}
+}
+
+func mainCommonContext() {
+	log.Println("app is running withCommon context")
 	cycle := 0
 	for {
 		cycle++
