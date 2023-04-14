@@ -11,9 +11,10 @@ runl(){
   go run main.go
 }
 
-rund(){
-  docker build  -t chromedp-alpine .
-  docker container run -it --rm --security-opt seccomp=$(pwd)/chrome.json chromedp-alpine
+check(){
+  container=$(docker ps | grep chrome | awk '{  print $10 }')
+  docker exec -ti $container /bin/bash
+  # and then paste: ps -aux | grep chrome | wc -l
 }
 
 "$@"

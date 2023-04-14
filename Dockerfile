@@ -13,9 +13,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -installsuffix cgo -o /app
 FROM arunvelsriram/utils
 USER root
 RUN apt upgrade -y
-RUN apt-get install curl gnupg debian-keyring debian-archive-keyring -y
-RUN apt-get install bc -y
-RUN apt-get install sudo -y
+RUN apt-get install curl gnupg -y
 RUN curl -fsSL https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc | apt-key add -
 RUN apt-key adv --keyserver "keyserver.ubuntu.com" --recv-keys "F77F1EDA57EBB1CC"
 RUN apt-get install apt-transport-https
