@@ -1,8 +1,9 @@
 package main
 
 import (
-	"context"
-	"github.com/chromedp/chromedp"
+	"github.com/pkg/errors"
+	"github.com/tebeka/selenium"
+	"github.com/tebeka/selenium/chrome"
 	"log"
 	"time"
 )
@@ -13,35 +14,53 @@ func main() {
 	for {
 		cycle++
 		log.Printf("starting cycle %+v\n", cycle)
-		func(){
+		if err := func() (finalErr error) {
 			log.SetFlags(log.LstdFlags | log.Llongfile)
-			ctx0, cancel2 := chromedp.NewContext(
-				context.Background(),
-				chromedp.WithLogf(log.Printf),
-			)
-			defer cancel2()
-			defer ctx0.Done()
 
-			u := `https://github.com/`
-			selector := `title`
-			log.Println("requesting", u)
-			log.Println("selector", selector)
-			var result string
-			err := chromedp.Run(ctx0,
-				chromedp.Navigate(u),
-				chromedp.WaitReady(selector),
-				chromedp.OuterHTML(selector, &result),
-			)
+			// Run Chrome browser
+			service, err := selenium.NewChromeDriverService("./chromedriver", 4444)
 			if err != nil {
-				log.Printf("error %+v \n", err)
+				return errors.WithStack(err)
 			}
-			log.Printf("result:\n%s", result)
-			if errCancel := chromedp.Cancel(ctx0); errCancel != nil {
-				log.Printf("cancel context error: %+v \n", errCancel)
-			} else {
-				log.Printf("cancel run without an error!")
+			defer func(){
+				if errS := service.Stop(); errS != nil {
+					if finalErr != nil {
+						finalErr = errors.WithStack(errS)
+					} else {
+						log.Printf("error: %+v", errS)
+					}
+
+				}
+			}()
+
+			caps := selenium.Capabilities{}
+			caps.AddChrome(chrome.Capabilities{Args: []string{
+				"window-size=1920x1080",
+				"--no-sandbox",
+				"--disable-dev-shm-usage",
+				"disable-gpu",
+				// "--headless",  // comment out this line to see the browser
+			}})
+
+			driver, err := selenium.NewRemote(caps, "")
+			if err != nil {
+				return errors.WithStack(err)
 			}
-		}()
+
+			if errG := driver.Get("https://github.com"); errG != nil {
+				return errors.WithStack(errG)
+			}
+			title, err := driver.Title()
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			log.Printf("title: %+v", title)
+			return nil
+		}(); err != nil {
+			log.Printf("error: %+v", err)
+		} else {
+			log.Printf("no errors")
+		}
 		sl := time.Second
 		log.Printf("sleeping for %s\n", sl)
 		time.Sleep(sl)

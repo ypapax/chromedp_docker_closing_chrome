@@ -7,7 +7,7 @@ run(){
   docker-compose up
 }
 
-runl(){
+loca(){
   go run main.go
 }
 
@@ -17,6 +17,11 @@ check(){
   # and then paste:
   #                 ps -aux | grep chrome | wc -l
 
+}
+
+checkLoca(){
+  ps  | grep chrome 
+  ps  | grep chrome | wc -l
 }
 
 "$@"

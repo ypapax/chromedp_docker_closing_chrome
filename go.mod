@@ -7,5 +7,7 @@ require (
 	github.com/chromedp/chromedp v0.9.1 // indirect
 	github.com/gobwas/ws v1.2.0 // indirect
 	github.com/knq/sysutil v0.0.0-20191005231841-15668db23d08 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/tebeka/selenium v0.9.9 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 )
