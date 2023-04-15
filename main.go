@@ -39,7 +39,7 @@ func main() {
 			if errCancel := chromedp.Cancel(ctx0); errCancel != nil {
 				log.Printf("cancel context error: %+v \n", errCancel)
 			} else {
-				log.Printf("cancel run without an error")
+				log.Printf("cancel run without an error!")
 			}
 		}()
 		sl := time.Second
