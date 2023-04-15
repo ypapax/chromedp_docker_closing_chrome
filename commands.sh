@@ -20,7 +20,7 @@ check(){
 }
 
 checkLoca(){
-  ps  | grep chrome 
+  ps  | grep chrome
   ps  | grep chrome | wc -l
 }
 

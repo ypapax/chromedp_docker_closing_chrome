@@ -39,7 +39,7 @@ func main() {
 				"--no-sandbox",
 				"--disable-dev-shm-usage",
 				"disable-gpu",
-				// "--headless",  // comment out this line to see the browser
+				"--headless",  // comment out this line to see the browser
 			}})
 
 			driver, err := selenium.NewRemote(caps, "")
@@ -55,6 +55,12 @@ func main() {
 				return errors.WithStack(err)
 			}
 			log.Printf("title: %+v", title)
+			if errC := driver.Close(); errC != nil {
+				return errors.WithStack(errC)
+			}
+			if errQ := driver.Quit(); errQ != nil {
+				return errors.WithStack(errQ)
+			}
 			return nil
 		}(); err != nil {
 			log.Printf("error: %+v", err)
