@@ -1,32 +1,19 @@
-# Compile app binary
-FROM golang:latest as build-env
+FROM golang:1.12.0-alpine3.9
 
-ENV GO111MODULE=on
+RUN apk update && apk upgrade && apk add --no-cache bash git && apk add --no-cache chromium
 
-WORKDIR /go/src
-COPY main.go main.go
-COPY go.mod go.mod
-COPY go.sum go.sum
+# Installs latest Chromium package.
+RUN echo @edge http://nl.alpinelinux.org/alpine/edge/community >> /etc/apk/repositories \
+    && echo @edge http://nl.alpinelinux.org/alpine/edge/main >> /etc/apk/repositories \
+    && apk add --no-cache \
+    harfbuzz@edge \
+    nss@edge \
+    freetype@edge \
+    ttf-freefont@edge \
+    && rm -rf /var/cache/* \
+    && mkdir /var/cache/apk
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -installsuffix cgo -o /app
-
-FROM arunvelsriram/utils
-USER root
-RUN apt upgrade -y
-RUN apt-get install curl gnupg -y
-RUN curl -fsSL https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc | apt-key add -
-RUN apt-key adv --keyserver "keyserver.ubuntu.com" --recv-keys "F77F1EDA57EBB1CC"
-RUN apt-get install apt-transport-https
-RUN echo "deb http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu bionic main" > /etc/apt/sources.list.d/bintray.rabbitmq.list
-RUN echo "deb-src http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu bionic main" >> /etc/apt/sources.list.d/bintray.rabbitmq.list
-RUN apt-get update
-
-RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
-
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-RUN dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install
-
-COPY --from=build-env /app /app
+RUN go get github.com/mafredri/cdp
 
 
-CMD ["/app"]
+CMD chromium-browser --headless --disable-gpu --remote-debugging-port=9222 --disable-web-security --safebrowsing-disable-auto-update --disable-sync --disable-default-apps --hide-scrollbars --metrics-recording-only --mute-audio --no-first-run --no-sandbox

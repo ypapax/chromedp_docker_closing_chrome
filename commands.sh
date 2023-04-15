@@ -7,7 +7,7 @@ run(){
   docker-compose up
 }
 
-runl(){
+loca(){
   go run main.go
 }
 
