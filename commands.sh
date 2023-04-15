@@ -8,7 +8,9 @@ run(){
 }
 
 loca(){
-  go run app/main.go
+  out=/tmp/chromedp_docker_closing_chrome
+  go build -o $out
+  $out
 }
 
 check(){
