@@ -11,6 +11,7 @@ import (
 func main() {
 	log.Println("app is running")
 	cycle := 0
+	LogChromeMem()
 	for {
 		cycle++
 		log.Printf("starting cycle %+v\n", cycle)

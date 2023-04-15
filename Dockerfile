@@ -5,9 +5,9 @@ ENV GO111MODULE=on
 
 WORKDIR /go/src
 COPY main.go main.go
+COPY mem_stat.go mem_stat.go
 COPY go.mod go.mod
 COPY go.sum go.sum
-
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -installsuffix cgo -o /app
 
 FROM arunvelsriram/utils

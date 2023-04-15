@@ -8,7 +8,7 @@ run(){
 }
 
 loca(){
-  go run main.go
+  go run app/main.go
 }
 
 check(){
