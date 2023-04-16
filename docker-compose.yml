@@ -5,3 +5,9 @@ services:
       context: ./
       dockerfile: Dockerfile
     image: chromedp_docker
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 5000M

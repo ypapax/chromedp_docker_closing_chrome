@@ -7,8 +7,10 @@ run(){
   docker-compose up
 }
 
-runl(){
-  go run main.go
+loca(){
+  out=/tmp/chromedp_docker_closing_chrome
+  go build -o $out
+  $out
 }
 
 check(){
@@ -18,5 +20,13 @@ check(){
   #                 ps -aux | grep chrome | wc -l
 
 }
+
+checkLoca(){
+  ps  | grep chrome
+  ps  | grep chrome | wc -l
+}
+# number of opened files:
+#lsof -Fn | sort | uniq | wc -l
+
 
 "$@"
