@@ -26,11 +26,13 @@ locaselenium(){
 }
 
 chromeCont(){
-  contName chromedp_1
+#  contName chromedp_1
+  echo chromedp_docker_closing_chrome_chromedp_1
 }
 
 seleniumCont(){
-  contName selenium
+#  contName selenium
+  echo chromedp_docker_closing_chrome_selenium_1
 }
 
 contName(){
