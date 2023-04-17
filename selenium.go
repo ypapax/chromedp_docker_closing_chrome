@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
@@ -16,7 +17,10 @@ var (
 	freePortsTo   = 5555
 )
 
-func chooseAport() int {
+func chooseAport() (choosedPort int) {
+	defer func(){
+		log.Printf("port is choosed: %+v", choosedPort)
+	}()
 	usedPortsMtx.Lock()
 	defer usedPortsMtx.Unlock()
 	for {
@@ -36,6 +40,7 @@ func freeUpAport(port int) {
 	usedPortsMtx.Lock()
 	defer usedPortsMtx.Unlock()
 	delete(usedPorts, port)
+	log.Printf("port is freed up: %+v", port)
 }
 
 func seleniumRun(u string) (finalErr error) {
@@ -64,7 +69,7 @@ func seleniumRun(u string) (finalErr error) {
 		"--headless", // comment out this line to see the browser
 	}})
 
-	driver, err := selenium.NewRemote(caps, "")
+	driver, err := selenium.NewRemote(caps, fmt.Sprintf("http://127.0.0.1:%+v/wd/hub", port))
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -7,6 +7,10 @@ run(){
   docker-compose up
 }
 
+stats_dp(){
+  docker
+}
+
 loca(){
   out=/tmp/chromedp_docker_closing_chrome
   go build -o $out
@@ -21,8 +25,28 @@ locaselenium(){
   TYPE=selenium loca
 }
 
+chromeCont(){
+  contName chromedp_1
+}
+
+seleniumCont(){
+  contName selenium
+}
+
+contName(){
+  docker ps | grep $1 | awk '{  print $10 }'
+}
+
+chromeStats(){
+  docker logs $(chromeCont)
+}
+
+selStats(){
+  docker logs $(seleniumCont)
+}
+
 check(){
-  container=$(docker ps | grep chrome | awk '{  print $10 }')
+  container=$(chromeCont)
   docker exec -ti $container /bin/bash
   # and then paste:
   #                 ps -aux | grep chrome | wc -l
