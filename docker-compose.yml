@@ -1,6 +1,6 @@
 version: "3"
 services:
-  app:
+  chromedp:
     build:
       context: ./
       dockerfile: Dockerfile
@@ -10,4 +10,19 @@ services:
       resources:
         limits:
           cpus: '0.2'
-          memory: 5000M
+          memory: 4000M
+    environment:
+      - TYPE=chromedp
+  selenium:
+    build:
+      context: ./
+      dockerfile: selenium/Dockerfile
+    image: selenium_docker
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 4000M
+    environment:
+      - TYPE=selenium

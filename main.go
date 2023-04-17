@@ -6,10 +6,12 @@ import (
 	"github.com/pkg/errors"
 	"log"
 	"math/rand"
+	"os"
 	"strings"
 	"sync"
 	"time"
 )
+
 
 func main() {
 	log.Println("app is running")
@@ -35,57 +37,47 @@ func main() {
 			defer func(){
 				<-simultControl
 			}()
-			log.Printf("starting cycle %+v\n", cycle)
-			u := randomSite()
 			if err := func() error {
-				ctx0, cancel2 := chromedp.NewContext(
-					context.Background(),
-					chromedp.WithLogf(log.Printf),
-				)
-				defer cancel2()
-				defer ctx0.Done()
+				log.Printf("starting cycle %+v\n", cycle)
+				u := randomSite()
+				var f func(string)error
+				t := os.Getenv("TYPE")
+				switch t {
+				case "selenium":
+					f = seleniumRun
+				case "chromedp":
+					f = chromedpRun
+				default:
+					return errors.Errorf("type %+v is not supported", t)
+				}
 
-				selector := `title`
-				log.Println("requesting", u)
-				log.Println("selector", selector)
-				var result string
-				err := chromedp.Run(ctx0,
-					chromedp.Navigate(u),
-					chromedp.WaitReady(selector),
-					chromedp.OuterHTML(selector, &result),
-				)
-				if err != nil {
-					return errors.WithStack(err)
-				}
-				log.Printf("result:\n%s", result)
-				if errCancel := chromedp.Cancel(ctx0); errCancel != nil {
-					return errors.WithStack(errCancel)
+				if err := f(u); err != nil {
+					log.Printf("error for url '%+v': %+v", u, err)
+					func(){
+						countMtx.Lock()
+						defer countMtx.Unlock()
+						countErr++
+					}()
 				} else {
-					log.Printf("cancel run without an error!")
+					func(){
+						countMtx.Lock()
+						defer countMtx.Unlock()
+						countNoErr++
+					}()
 				}
+				func(){
+					countMtx.Lock()
+					defer countMtx.Unlock()
+					diff := time.Since(started)
+					diffMinutes := diff.Minutes()
+					totalSpeedInMinuteNoErr := float64(countNoErr) / diffMinutes
+					log.Printf("%+v stats: countErr: %+v, countNoErr: %+v, total: %+v, totalSpeedInMinuteNoErr: %+v", diff, countErr, countNoErr, countErr + countNoErr, totalSpeedInMinuteNoErr)
+				}()
 				return nil
 			}(); err != nil {
-				log.Printf("error for url '%+v': %+v", u, err)
-				func(){
-					countMtx.Lock()
-					defer countMtx.Unlock()
-					countErr++
-				}()
-			} else {
-				func(){
-					countMtx.Lock()
-					defer countMtx.Unlock()
-					countNoErr++
-				}()
+				log.Printf("error is caught: %+v", err)
 			}
-			func(){
-				countMtx.Lock()
-				defer countMtx.Unlock()
-				diff := time.Since(started)
-				diffMinutes := diff.Minutes()
-				totalSpeedInMinuteNoErr := float64(countNoErr) / diffMinutes
-				log.Printf("%+v stats: countErr: %+v, countNoErr: %+v, total: %+v, totalSpeedInMinuteNoErr: %+v", diff, countErr, countNoErr, countErr + countNoErr, totalSpeedInMinuteNoErr)
-			}()
+
 			/*sl := time.Second
 			log.Printf("sleeping for %s\n", sl)
 			time.Sleep(sl)*/
@@ -93,6 +85,37 @@ func main() {
 
 	}
 }
+
+func chromedpRun(u string) error {
+	ctx0, cancel2 := chromedp.NewContext(
+		context.Background(),
+		chromedp.WithLogf(log.Printf),
+	)
+	defer cancel2()
+	defer ctx0.Done()
+
+	selector := `title`
+	log.Println("requesting", u)
+	log.Println("selector", selector)
+	var result string
+	err := chromedp.Run(ctx0,
+		chromedp.Navigate(u),
+		chromedp.WaitReady(selector),
+		chromedp.OuterHTML(selector, &result),
+	)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	log.Printf("result:\n%s", result)
+	if errCancel := chromedp.Cancel(ctx0); errCancel != nil {
+		return errors.WithStack(errCancel)
+	} else {
+		log.Printf("cancel run without an error!")
+	}
+	return nil
+}
+
+
 
 var sites []string
 func parseSites() {

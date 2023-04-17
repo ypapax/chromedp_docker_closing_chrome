@@ -13,6 +13,14 @@ loca(){
   $out
 }
 
+locadp(){
+  TYPE=chromedp loca
+}
+
+locaselenium(){
+  TYPE=selenium loca
+}
+
 check(){
   container=$(docker ps | grep chrome | awk '{  print $10 }')
   docker exec -ti $container /bin/bash
