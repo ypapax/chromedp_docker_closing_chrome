@@ -14,6 +14,11 @@ import (
 
 
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic is caught: %+v", r)
+		}
+	}()
 	log.Println("app is running")
 	cycle := 0
 	log.SetFlags(log.LstdFlags | log.Llongfile)
@@ -34,6 +39,11 @@ func main() {
 			log.Printf("error mem: %+v", err)
 		}
 		go func(cycle int){
+			defer func(){
+				if r := recover(); r != nil {
+					log.Printf("panic is caught: %+v", r)
+				}
+			}()
 			defer func(){
 				<-simultControl
 			}()
