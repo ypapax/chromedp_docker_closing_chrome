@@ -24,7 +24,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 	//LogChromeMem()
 	//ctx := context.Background()
-	simultControl := make(chan time.Time, 20)
+	simultControl := make(chan time.Time, 30)
 	//var count int
 	var countNoErr int
 	var countErr int
