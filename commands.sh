@@ -4,7 +4,7 @@ set -o pipefail
 
 run(){
   docker-compose build
-  docker-compose up
+  docker-compose up 2>&1 | tee /tmp/chromedp_sel.log
 }
 
 stats_dp(){
