@@ -100,3 +100,29 @@ func Mem() error {
 	logrus.Infof("chrome total megabytes: %+v, items: %+v, heaviest: %+v", sumMegaBytes, len(items), theHeaviest)
 	return nil
 }
+
+
+func OpenFiles() (int, error) {
+	//lsof -Fn | sort | uniq | wc -l
+	cmd := exec.Command("lsof", "-Fn")
+	stderr := bytes.Buffer{}
+	cmd.Stderr = &stderr
+	b, err := cmd.Output()
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	stderrStr := stderr.String()
+	if len(stderrStr) > 0 {
+		logrus.Warnf("stderrStr: %+v", stderrStr)
+	}
+	lines := strings.Split(string(b), "\n")
+	unique := make(map[string]struct{})
+	for _, l := range lines {
+		l = strings.TrimSpace(l)
+		if len(l) == 0 {
+			continue
+		}
+		unique[l] = struct{}{}
+	}
+	return len(unique), nil
+}

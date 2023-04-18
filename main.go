@@ -31,69 +31,79 @@ func main() {
 	var countMtx sync.Mutex
 	var started = time.Now()
 	parseSites()
-
-	for {
-		cycle++
-		simultControl<-time.Now()
-		if err := Mem(); err != nil {
-			log.Printf("error mem: %+v", err)
-		}
-		go func(cycle int){
-			defer func(){
-				if r := recover(); r != nil {
-					log.Printf("panic is caught: %+v", r)
-				}
-			}()
-			defer func(){
-				<-simultControl
-			}()
-			if err := func() error {
-				log.Printf("starting cycle %+v\n", cycle)
-				u := randomSite()
-				var f func(string)error
-				t := os.Getenv("TYPE")
-				switch t {
-				case "selenium":
-					f = seleniumRun
-				case "chromedp":
-					f = chromedpRun
-				default:
-					return errors.Errorf("type %+v is not supported", t)
-				}
-
-				if err := f(u); err != nil {
-					log.Printf("error for url '%+v': %+v", u, err)
-					func(){
-						countMtx.Lock()
-						defer countMtx.Unlock()
-						countErr++
-					}()
-				} else {
-					func(){
-						countMtx.Lock()
-						defer countMtx.Unlock()
-						countNoErr++
-					}()
-				}
-				func(){
-					countMtx.Lock()
-					defer countMtx.Unlock()
-					diff := time.Since(started)
-					diffMinutes := diff.Minutes()
-					totalSpeedInMinuteNoErr := float64(countNoErr) / diffMinutes
-					log.Printf("%+v stats: countErr: %+v, countNoErr: %+v, total: %+v, totalSpeedInMinuteNoErr: %+v", diff, countErr, countNoErr, countErr + countNoErr, totalSpeedInMinuteNoErr)
-				}()
-				return nil
-			}(); err != nil {
-				log.Printf("error is caught: %+v", err)
+	if err := func() error {
+		for {
+			cycle++
+			simultControl<-time.Now()
+			if err := Mem(); err != nil {
+				return errors.WithStack(err)
 			}
+			of, err := OpenFiles()
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			log.Printf("open files: %+v", of)
 
-			/*sl := time.Second
-			log.Printf("sleeping for %s\n", sl)
-			time.Sleep(sl)*/
-		}(cycle)
+			go func(cycle int){
+				defer func(){
+					if r := recover(); r != nil {
+						log.Printf("panic is caught: %+v", r)
+					}
+				}()
+				defer func(){
+					<-simultControl
+				}()
+				if err := func() error {
+					log.Printf("starting cycle %+v\n", cycle)
+					u := randomSite()
+					var f func(string)error
+					t := os.Getenv("TYPE")
+					switch t {
+					case "selenium":
+						f = seleniumRun
+					case "chromedp":
+						f = chromedpRun
+					default:
+						return errors.Errorf("type %+v is not supported", t)
+					}
 
+					if err := f(u); err != nil {
+						log.Printf("error for url '%+v': %+v", u, err)
+						func(){
+							countMtx.Lock()
+							defer countMtx.Unlock()
+							countErr++
+						}()
+					} else {
+						func(){
+							countMtx.Lock()
+							defer countMtx.Unlock()
+							countNoErr++
+						}()
+					}
+					func(){
+						countMtx.Lock()
+						defer countMtx.Unlock()
+						diff := time.Since(started)
+						diffMinutes := diff.Minutes()
+						totalSpeedInMinuteNoErr := float64(countNoErr) / diffMinutes
+						log.Printf("%+v stats: countErr: %+v, countNoErr: %+v, total: %+v, totalSpeedInMinuteNoErr: %+v", diff, countErr, countNoErr, countErr + countNoErr, totalSpeedInMinuteNoErr)
+					}()
+					return nil
+				}(); err != nil {
+					log.Printf("error is caught: %+v", err)
+				}
+
+				/*sl := time.Second
+				log.Printf("sleeping for %s\n", sl)
+				time.Sleep(sl)*/
+			}(cycle)
+
+		}
+	}(); err != nil {
+		log.Printf("error: %+v", err)
 	}
+
 }
 
 func chromedpRun(u string) error {

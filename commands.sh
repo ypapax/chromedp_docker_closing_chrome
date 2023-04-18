@@ -47,8 +47,12 @@ selStats(){
   docker logs $(seleniumCont)
 }
 
+#selOpenFiles(){
+#  check
+#}
+
 check(){
-  container=$(chromeCont)
+  container=$1
   docker exec -ti $container /bin/bash
   # and then paste:
   #                 ps -aux | grep chrome | wc -l
