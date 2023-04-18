@@ -21,6 +21,7 @@ RUN apt-get install apt-transport-https
 RUN echo "deb http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu bionic main" > /etc/apt/sources.list.d/bintray.rabbitmq.list
 RUN echo "deb-src http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu bionic main" >> /etc/apt/sources.list.d/bintray.rabbitmq.list
 RUN apt-get update
+RUN apt install lsof
 
 RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
 
