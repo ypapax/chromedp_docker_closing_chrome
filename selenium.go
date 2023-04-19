@@ -43,7 +43,55 @@ func freeUpAport(port int) {
 	log.Printf("port is freed up: %+v", port)
 }
 
-func seleniumRun(u string) (finalErr error) {
+func seleniumRunChrome(u string) (finalErr error) {
+	port := chooseAport()
+	service, err := selenium.NewChromeDriverService("./chromedriver", port)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer func() {
+		if errS := service.Stop(); errS != nil {
+			if finalErr != nil {
+				finalErr = errors.WithStack(errS)
+			} else {
+				log.Printf("error: %+v", errS)
+			}
+		}
+		freeUpAport(port)
+	}()
+
+	caps := selenium.Capabilities{}
+	caps.AddChrome(chrome.Capabilities{Args: []string{
+		"window-size=1920x1080",
+		"--no-sandbox",
+		"--disable-dev-shm-usage",
+		"disable-gpu",
+		"--headless", // comment out this line to see the browser
+	}})
+
+	driver, err := selenium.NewRemote(caps, fmt.Sprintf("http://127.0.0.1:%+v/wd/hub", port))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if errG := driver.Get(u); errG != nil {
+		return errors.WithStack(errG)
+	}
+	title, err := driver.Title()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	log.Printf("title: %+v", title)
+	if errC := driver.Close(); errC != nil {
+		return errors.WithStack(errC)
+	}
+	if errQ := driver.Quit(); errQ != nil {
+		return errors.WithStack(errQ)
+	}
+	return nil
+}
+
+func seleniumRunFirefox(u string) (finalErr error) {
 	port := chooseAport()
 	service, err := selenium.NewChromeDriverService("./chromedriver", port)
 	if err != nil {

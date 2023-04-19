@@ -24,7 +24,9 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 	//LogChromeMem()
 	//ctx := context.Background()
-	simultControl := make(chan time.Time, 30)
+	const simult = 30
+	log.Printf("simult: %+v", simult)
+	simultControl := make(chan time.Time, simult)
 	//var count int
 	var countNoErr int
 	var countErr int
@@ -60,7 +62,9 @@ func main() {
 					t := os.Getenv("TYPE")
 					switch t {
 					case "selenium":
-						f = seleniumRun
+						f = seleniumRunChrome
+					case "seleniumff":
+						f = seleniumRunFirefox
 					case "chromedp":
 						f = chromedpRun
 					default:

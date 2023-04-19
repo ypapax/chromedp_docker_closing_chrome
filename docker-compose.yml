@@ -26,3 +26,16 @@ services:
           memory: 6000M
     environment:
       - TYPE=selenium
+#  seleniumff:
+#    build:
+#      context: ./
+#      dockerfile: seleniumff/Dockerfile
+#    image: selenium_dockerff
+#    restart: "no"
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.2'
+#          memory: 6000M
+#    environment:
+#      - TYPE=selenium
