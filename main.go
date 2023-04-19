@@ -4,9 +4,11 @@ import (
 	"context"
 	"github.com/chromedp/chromedp"
 	"github.com/pkg/errors"
+	"github.com/ypapax/logrus_conf"
 	"log"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -24,16 +26,27 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 	//LogChromeMem()
 	//ctx := context.Background()
-	const simult = 50
-	log.Printf("simult: %+v", simult)
-	simultControl := make(chan time.Time, simult)
-	//var count int
-	var countNoErr int
-	var countErr int
-	var countMtx sync.Mutex
-	var started = time.Now()
-	parseSites()
+
 	if err := func() error {
+		if err := logrus_conf.PrepareFromEnv("headless_browser"); err != nil {
+			return errors.WithStack(err)
+		}
+		simultStr := os.Getenv("SIMULT")
+		if len(simultStr) == 0 {
+			return errors.Errorf("missing simult env")
+		}
+		simult, err := strconv.Atoi(simultStr)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		log.Printf("simult: %+v", simult)
+		simultControl := make(chan time.Time, simult)
+		//var count int
+		var countNoErr int
+		var countErr int
+		var countMtx sync.Mutex
+		var started = time.Now()
+		parseSites()
 		for {
 			cycle++
 			simultControl<-time.Now()
@@ -55,7 +68,7 @@ func main() {
 				defer func(){
 					<-simultControl
 				}()
-				if err := func() error {
+				if errF := func() error {
 					log.Printf("starting cycle %+v\n", cycle)
 					u := randomSite()
 					var f func(string)error
@@ -94,8 +107,8 @@ func main() {
 						log.Printf("%+v stats: countErr: %+v, countNoErr: %+v, total: %+v, totalSpeedInMinuteNoErr: %+v", diff, countErr, countNoErr, countErr + countNoErr, totalSpeedInMinuteNoErr)
 					}()
 					return nil
-				}(); err != nil {
-					log.Printf("error is caught: %+v", err)
+				}(); errF != nil {
+					log.Printf("error is caught: %+v", errF)
 				}
 
 				/*sl := time.Second

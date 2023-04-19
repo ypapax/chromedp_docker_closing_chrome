@@ -8,7 +8,7 @@ now(){
 
 run(){
   docker-compose build
-  docker-compose up 2>&1 | tee /tmp/chromedp_sel_$(now).log
+  SIMULT=${SIMULT-50} docker-compose up 2>&1 | tee /tmp/chromedp_sel_$(now).log
 }
 
 stats_dp(){
@@ -27,6 +27,11 @@ locadp(){
 
 locaselenium(){
   TYPE=selenium loca
+}
+
+locaselenium(){
+  SIMULT=1\
+  TYPE=seleniumff DRIVER_PATH="./geckodriver_mac" loca
 }
 
 chromeCont(){

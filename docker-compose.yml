@@ -13,6 +13,7 @@ services:
           memory: 6000M
     environment:
       - TYPE=chromedp
+      - SIMULT=${SIMULT}
   selenium:
     build:
       context: ./
@@ -26,6 +27,7 @@ services:
           memory: 6000M
     environment:
       - TYPE=selenium
+      - SIMULT=${SIMULT}
 #  seleniumff:
 #    build:
 #      context: ./
@@ -39,3 +41,4 @@ services:
 #          memory: 6000M
 #    environment:
 #      - TYPE=selenium
+#      - SIMULT=${SIMULT}

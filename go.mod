@@ -10,6 +10,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/tebeka/selenium v0.9.9 // indirect
+	github.com/ypapax/logrus_conf v0.0.0-20210711042305-9e6ef6ecc90f // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 )

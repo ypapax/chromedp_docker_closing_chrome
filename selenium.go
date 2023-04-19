@@ -5,7 +5,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
+	"github.com/tebeka/selenium/firefox"
 	"log"
+	"os"
 	"sync"
 	"time"
 )
@@ -92,8 +94,12 @@ func seleniumRunChrome(u string) (finalErr error) {
 }
 
 func seleniumRunFirefox(u string) (finalErr error) {
+	driverPath := os.Getenv("DRIVER_PATH")
+	if len(driverPath) == 0 {
+		return errors.Errorf("missing driver path")
+	}
 	port := chooseAport()
-	service, err := selenium.NewChromeDriverService("./chromedriver", port)
+	service, err := selenium.NewGeckoDriverService(driverPath, port)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -109,7 +115,7 @@ func seleniumRunFirefox(u string) (finalErr error) {
 	}()
 
 	caps := selenium.Capabilities{}
-	caps.AddChrome(chrome.Capabilities{Args: []string{
+	caps.AddFirefox(firefox.Capabilities{Args: []string{
 		"window-size=1920x1080",
 		"--no-sandbox",
 		"--disable-dev-shm-usage",
@@ -117,9 +123,10 @@ func seleniumRunFirefox(u string) (finalErr error) {
 		"--headless", // comment out this line to see the browser
 	}})
 
-	driver, err := selenium.NewRemote(caps, fmt.Sprintf("http://127.0.0.1:%+v/wd/hub", port))
+	urlPrefix := fmt.Sprintf("http://127.0.0.1:%+v/wd/hub", port)
+	driver, err := selenium.NewRemote(caps, urlPrefix)
 	if err != nil {
-		return errors.WithStack(err)
+		return errors.Wrapf(err, "for driver %+v and urlPrefix: %+v", driverPath, urlPrefix)
 	}
 
 	if errG := driver.Get(u); errG != nil {
