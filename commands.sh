@@ -2,9 +2,13 @@
 set -ex
 set -o pipefail
 
+now(){
+	date '+%Y-%m-%d--%H-%M-%S'
+}
+
 run(){
   docker-compose build
-  docker-compose up 2>&1 | tee /tmp/chromedp_sel.log
+  docker-compose up 2>&1 | tee /tmp/chromedp_sel_$(now).log
 }
 
 stats_dp(){

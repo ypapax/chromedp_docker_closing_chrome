@@ -24,7 +24,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 	//LogChromeMem()
 	//ctx := context.Background()
-	const simult = 30
+	const simult = 50
 	log.Printf("simult: %+v", simult)
 	simultControl := make(chan time.Time, simult)
 	//var count int
