@@ -10,7 +10,7 @@ services:
       resources:
         limits:
           cpus: '0.2'
-          memory: 6000M
+          memory: 3000M
     environment:
       - TYPE=chromedp
       - SIMULT=${SIMULT}
@@ -24,9 +24,23 @@ services:
       resources:
         limits:
           cpus: '0.2'
-          memory: 6000M
+          memory: 3000M
     environment:
       - TYPE=selenium
+      - SIMULT=${SIMULT}
+  chromedpreuse:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: chromedpreuse
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 3000M
+    environment:
+      - TYPE=chromedpreuse
       - SIMULT=${SIMULT}
 #  seleniumff:
 #    build:
@@ -38,7 +52,7 @@ services:
 #      resources:
 #        limits:
 #          cpus: '0.2'
-#          memory: 6000M
+#          memory: 3000M
 #    environment:
 #      - TYPE=selenium
 #      - SIMULT=${SIMULT}

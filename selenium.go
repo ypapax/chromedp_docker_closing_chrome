@@ -45,11 +45,11 @@ func freeUpAport(port int) {
 	log.Printf("port is freed up: %+v", port)
 }
 
-func seleniumRunChrome(u string) (finalErr error) {
+func seleniumRunChrome(u string) (result string, finalErr error) {
 	port := chooseAport()
 	service, err := selenium.NewChromeDriverService("./chromedriver", port)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 	defer func() {
 		if errS := service.Stop(); errS != nil {
@@ -73,35 +73,34 @@ func seleniumRunChrome(u string) (finalErr error) {
 
 	driver, err := selenium.NewRemote(caps, fmt.Sprintf("http://127.0.0.1:%+v/wd/hub", port))
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	if errG := driver.Get(u); errG != nil {
-		return errors.WithStack(errG)
+		return "", errors.WithStack(errG)
 	}
 	title, err := driver.Title()
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
-	log.Printf("title: %+v", title)
 	if errC := driver.Close(); errC != nil {
-		return errors.WithStack(errC)
+		return "", errors.WithStack(errC)
 	}
 	if errQ := driver.Quit(); errQ != nil {
-		return errors.WithStack(errQ)
+		return "", errors.WithStack(errQ)
 	}
-	return nil
+	return title, nil
 }
 
-func seleniumRunFirefox(u string) (finalErr error) {
+func seleniumRunFirefox(u string) (result string, finalErr error) {
 	driverPath := os.Getenv("DRIVER_PATH")
 	if len(driverPath) == 0 {
-		return errors.Errorf("missing driver path")
+		return "", errors.Errorf("missing driver path")
 	}
 	port := chooseAport()
 	service, err := selenium.NewGeckoDriverService(driverPath, port)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 	defer func() {
 		if errS := service.Stop(); errS != nil {
@@ -126,22 +125,22 @@ func seleniumRunFirefox(u string) (finalErr error) {
 	urlPrefix := fmt.Sprintf("http://127.0.0.1:%+v/wd/hub", port)
 	driver, err := selenium.NewRemote(caps, urlPrefix)
 	if err != nil {
-		return errors.Wrapf(err, "for driver %+v and urlPrefix: %+v", driverPath, urlPrefix)
+		return "", errors.Wrapf(err, "for driver %+v and urlPrefix: %+v", driverPath, urlPrefix)
 	}
 
 	if errG := driver.Get(u); errG != nil {
-		return errors.WithStack(errG)
+		return "", errors.WithStack(errG)
 	}
 	title, err := driver.Title()
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 	log.Printf("title: %+v", title)
 	if errC := driver.Close(); errC != nil {
-		return errors.WithStack(errC)
+		return "", errors.WithStack(errC)
 	}
 	if errQ := driver.Quit(); errQ != nil {
-		return errors.WithStack(errQ)
+		return "", errors.WithStack(errQ)
 	}
-	return nil
+	return title, nil
 }

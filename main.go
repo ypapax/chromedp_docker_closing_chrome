@@ -15,7 +15,10 @@ import (
 )
 
 
+const chromeDpReuse = "chromedpreuse"
+
 func main() {
+	t := os.Getenv("TYPE")
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic is caught: %+v", r)
@@ -39,8 +42,12 @@ func main() {
 		if err != nil {
 			return errors.WithStack(err)
 		}
+		if t == chromeDpReuse {
+			generateCommonContexts(simult)
+		}
 		log.Printf("simult: %+v", simult)
 		simultControl := make(chan time.Time, simult)
+		var latestErrTime, latestOkTime time.Time
 		//var count int
 		var countNoErr int
 		var countErr int
@@ -71,31 +78,35 @@ func main() {
 				if errF := func() error {
 					log.Printf("starting cycle %+v\n", cycle)
 					u := randomSite()
-					var f func(string)error
-					t := os.Getenv("TYPE")
+					var f func(string)(string, error)
+
 					switch t {
 					case "selenium":
 						f = seleniumRunChrome
 					case "seleniumff":
 						f = seleniumRunFirefox
 					case "chromedp":
-						f = chromedpRun
+						f = chromedpRunProperClose
+					case chromeDpReuse:
+						f = chromedpRunReuseContext
 					default:
 						return errors.Errorf("type %+v is not supported", t)
 					}
-
-					if err := f(u); err != nil {
-						log.Printf("error for url '%+v': %+v", u, err)
+					title, errF := f(u)
+					if errF != nil {
+						log.Printf("error for url '%+v': %+v", u, errF)
 						func(){
 							countMtx.Lock()
 							defer countMtx.Unlock()
 							countErr++
+							latestErrTime = time.Now()
 						}()
 					} else {
 						func(){
 							countMtx.Lock()
 							defer countMtx.Unlock()
 							countNoErr++
+							latestOkTime = time.Now()
 						}()
 					}
 					func(){
@@ -104,7 +115,8 @@ func main() {
 						diff := time.Since(started)
 						diffMinutes := diff.Minutes()
 						totalSpeedInMinuteNoErr := float64(countNoErr) / diffMinutes
-						log.Printf("%+v stats: countErr: %+v, countNoErr: %+v, total: %+v, totalSpeedInMinuteNoErr: %+v", diff, countErr, countNoErr, countErr + countNoErr, totalSpeedInMinuteNoErr)
+						log.Printf("title: %+v, %+v stats: countErr: %+v, countNoErr: %+v, total: %+v, totalSpeedInMinuteNoErr: %+v, latest err time: %+v(%+v), latest ok time: %+v(%+v) for url %+v",
+							title, diff, countErr, countNoErr, countErr + countNoErr, totalSpeedInMinuteNoErr, latestErrTime, time.Since(latestErrTime), latestOkTime, time.Since(latestOkTime), u)
 					}()
 					return nil
 				}(); errF != nil {
@@ -123,7 +135,68 @@ func main() {
 
 }
 
-func chromedpRun(u string) error {
+var (
+	commonContextMtx       = &sync.Mutex{}
+	//commonContextPoolInUse []context.Context
+	commonContextPoolFree  []context.Context
+)
+
+func generateCommonContexts(count int) {
+	commonContextMtx.Lock()
+	defer commonContextMtx.Unlock()
+	for i := 0; i < count; i++ {
+		ctx0, _ := chromedp.NewContext(
+			context.Background(),
+			chromedp.WithLogf(log.Printf),
+		)
+		commonContextPoolFree = append(commonContextPoolFree, ctx0)
+	}
+}
+func getFreeContext() (*context.Context, error) {
+	commonContextMtx.Lock()
+	defer commonContextMtx.Unlock()
+	if len(commonContextPoolFree) == 0 {
+		return nil, errors.Errorf("no free context")
+	}
+	result := commonContextPoolFree[0]
+	commonContextPoolFree = commonContextPoolFree[1:]
+	return &result, nil
+}
+
+func returnContextBack(ctx context.Context) {
+	commonContextMtx.Lock()
+	defer commonContextMtx.Unlock()
+	commonContextPoolFree = append(commonContextPoolFree, ctx)
+}
+
+func chromedpRunReuseContext(u string) (string, error) {
+	ctx0, err := getFreeContext()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	if ctx0 == nil {
+		return "", errors.Errorf("ctx0 is nil")
+	}
+	defer func(){
+		returnContextBack(*ctx0)
+	}()
+	selector := `title`
+	log.Println("requesting", u)
+	log.Println("selector", selector)
+	var result string
+
+	if errR := chromedp.Run(*ctx0,
+		chromedp.Navigate(u),
+		chromedp.WaitReady(selector),
+		chromedp.OuterHTML(selector, &result),
+	); errR != nil {
+		return "", errors.WithStack(errR)
+	}
+	return result, nil
+}
+
+
+func chromedpRunProperClose(u string) (string, error) {
 	ctx0, cancel2 := chromedp.NewContext(
 		context.Background(),
 		chromedp.WithLogf(log.Printf),
@@ -141,15 +214,15 @@ func chromedpRun(u string) error {
 		chromedp.OuterHTML(selector, &result),
 	)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
-	log.Printf("result:\n%s", result)
+	log.Printf("result: %s", result)
 	if errCancel := chromedp.Cancel(ctx0); errCancel != nil {
-		return errors.WithStack(errCancel)
+		return "", errors.WithStack(errCancel)
 	} else {
 		log.Printf("cancel run without an error!")
 	}
-	return nil
+	return result, nil
 }
 
 
