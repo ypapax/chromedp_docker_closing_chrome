@@ -138,7 +138,7 @@ func main() {
 var (
 	commonContextMtx       = &sync.Mutex{}
 	//commonContextPoolInUse []context.Context
-	commonContextPoolFree  []context.Context
+	commonContextPoolFree  []*context.Context
 )
 
 func generateCommonContexts(count int) {
@@ -149,7 +149,7 @@ func generateCommonContexts(count int) {
 			context.Background(),
 			chromedp.WithLogf(log.Printf),
 		)
-		commonContextPoolFree = append(commonContextPoolFree, ctx0)
+		commonContextPoolFree = append(commonContextPoolFree, &ctx0)
 	}
 }
 func getFreeContext() (*context.Context, error) {
@@ -160,10 +160,10 @@ func getFreeContext() (*context.Context, error) {
 	}
 	result := commonContextPoolFree[0]
 	commonContextPoolFree = commonContextPoolFree[1:]
-	return &result, nil
+	return result, nil
 }
 
-func returnContextBack(ctx context.Context) {
+func returnContextBack(ctx *context.Context) {
 	commonContextMtx.Lock()
 	defer commonContextMtx.Unlock()
 	commonContextPoolFree = append(commonContextPoolFree, ctx)
@@ -178,7 +178,7 @@ func chromedpRunReuseContext(u string) (string, error) {
 		return "", errors.Errorf("ctx0 is nil")
 	}
 	defer func(){
-		returnContextBack(*ctx0)
+		returnContextBack(ctx0)
 	}()
 	selector := `title`
 	log.Println("requesting", u)
