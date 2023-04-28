@@ -8,7 +8,7 @@ now(){
 
 run(){
   docker-compose build
-  SIMULT=${SIMULT-50} docker-compose up 2>&1 | tee /tmp/chromedp_sel_$(now).log
+  SIMULT=${SIMULT-50} docker-compose up 2>&1 | tee ~/chromedp_sel_$(now).log
 }
 
 stats_dp(){
